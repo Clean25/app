@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inspección RER Autónoma</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+  <h1>Formulario de Inspección RER Autónoma</h1>
+  <input type="text" id="filename" placeholder="Nombre del archivo PDF" required />
+
+  <form id="inspection-form">
+    <!-- Acordeón generado dinámicamente -->
+    <!-- Aquí se insertarán las secciones -->
+  </form>
+
+  <h2>Firma del Inspector</h2>
+  <canvas id="firma-canvas" width="300" height="100" style="border:1px solid #000"></canvas>
+  <div>
+    <button type="button" id="clear-firma">Limpiar Firma</button>
+  </div>
+
+  <h2>Fotos georreferenciadas</h2>
+  <video id="video" autoplay></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+  <div>
+    <button type="button" id="start-btn">Activar Cámara</button>
+    <button type="button" id="capture-btn" disabled>Tomar Foto</button>
+    <button type="button" id="reset-btn">Limpiar Fotos</button>
+  </div>
+  <div id="photo-thumbnails"></div>
+
+  <div style="margin-top: 20px;">
+    <button type="button" id="pdf-btn" disabled>Generar PDF</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+<script>
+  // Insertar los acordeones del formulario al cargar
+  window.onload = async () => {
+    const response = await fetch("formulario.json");
+    const formSections = await response.json();
+    const form = document.getElementById("inspection-form");
+
+    formSections.forEach((section, idx) => {
+      const wrapper = document.createElement("div");
+      wrapper.classList.add("accordion");
+
+      const header = document.createElement("button");
+      header.className = "accordion-toggle";
+      header.type = "button";
+      header.innerText = `${idx + 1}. ${section.titulo}`;
+      header.onclick = () => wrapper.classList.toggle("active");
+
+      const content = document.createElement("div");
+      content.className = "accordion-content";
+
+      section.campos.forEach(campo => {
+        const label = document.createElement("label");
+        label.innerText = campo.etiqueta;
+
+        let input;
+        if (campo.tipo === "text" || campo.tipo === "number" || campo.tipo === "date") {
+          input = document.createElement("input");
+          input.type = campo.tipo;
+        } else if (campo.tipo === "textarea") {
+          input = document.createElement("textarea");
+        } else if (campo.tipo === "select") {
+          input = document.createElement("select");
+          campo.opciones.forEach(opt => {
+            const option = document.createElement("option");
+            option.value = opt;
+            option.text = opt;
+            input.appendChild(option);
+          });
+        } else if (campo.tipo === "radio") {
+          input = document.createElement("div");
+          campo.opciones.forEach(opt => {
+            const radio = document.createElement("input");
+            radio.type = "radio";
+            radio.name = campo.id;
+            radio.value = opt;
+            radio.required = true;
+            const span = document.createElement("span");
+            span.innerText = opt;
+            input.appendChild(radio);
+            input.appendChild(span);
+          });
+        }
+
+        if (input && campo.tipo !== "radio") {
+          input.required = true;
+          input.id = campo.id;
+        }
+
+        content.appendChild(label);
+        content.appendChild(input);
+      });
+
+      wrapper.appendChild(header);
+      wrapper.appendChild(content);
+      form.appendChild(wrapper);
+    });
+  };
+</script>
+
+</body>
+</html>
